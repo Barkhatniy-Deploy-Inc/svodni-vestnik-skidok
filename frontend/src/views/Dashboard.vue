@@ -1,29 +1,40 @@
 <template>
   <div class="dashboard">
-    <div v-if="store.loading" class="loader">Считываем данные...</div>
+    <div v-if="store.loading && store.items.length === 0" class="loader">Считываем данные...</div>
     
+    <div v-if="store.items.length > 0" class="actions-bar">
+      <button @click="updatePrices" :disabled="updating" class="update-all-btn">
+        {{ updating ? 'ОБНОВЛЯЕМ...' : '🔄 ОБНОВИТЬ ЦЕНЫ' }}
+      </button>
+    </div>
+
+    <div v-if="store.items.length === 0 && !store.loading" class="empty-state">
+      <div class="icon">🔍</div>
+      <p>Список пуст. Добавьте первый товар для надзора.</p>
+    </div>
+
     <div v-else class="product-list">
       <div v-for="item in store.items" :key="item.id" class="product-card">
         <div class="card-header">
           <div class="info">
             <h3>{{ item.name }}</h3>
             <div class="price-group">
-              <span class="current">{{ item.current_price }} ₽</span>
+              <span class="current">{{ item.current_price || '...' }} ₽</span>
               <span class="target">Цель: {{ item.target_price }} ₽</span>
             </div>
           </div>
-          <div class="status-indicator" :class="{ 'ready': item.current_price <= item.target_price }">
-            {{ item.current_price <= item.target_price ? 'ВЫГОДНО' : 'ОЖИДАНИЕ' }}
-          </div>
+          <button @click="deleteProduct(item.id)" class="delete-btn">×</button>
         </div>
         
-        <div class="chart-wrapper">
-          <PriceChart :history="item.history" />
+        <div class="chart-wrapper" v-if="item.price_history && item.price_history.length > 0">
+          <PriceChart :history="item.price_history.map(h => h.price)" />
         </div>
         
         <div class="card-footer">
-          <span class="last-update">Обновлено: только что</span>
-          <button class="details-btn">История →</button>
+          <span class="last-update">Обновлено: {{ formatDate(item.updated_at) }}</span>
+          <div class="status-indicator" :class="{ 'ready': item.current_price <= item.target_price && item.current_price > 0 }">
+            {{ (item.current_price <= item.target_price && item.current_price > 0) ? 'ВЫГОДНО' : 'ОЖИДАНИЕ' }}
+          </div>
         </div>
       </div>
     </div>
@@ -31,12 +42,78 @@
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue';
 import { useProductStore } from '../store/products';
+import client from '../api/client';
 import PriceChart from '../components/PriceChart.vue';
+
 const store = useProductStore();
+const updating = ref(false);
+
+const updatePrices = async () => {
+  updating.value = true;
+  try {
+    await client.post('/api/v1/products/update-all');
+    alert('Задача на обновление запущена. Цены обновятся в течение нескольких минут.');
+  } catch (err) {
+    const msg = err.response?.data?.detail || 'Ошибка при обновлении';
+    alert(msg);
+  } finally {
+    updating.value = false;
+  }
+};
+
+onMounted(() => {
+  store.fetchProducts();
+});
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return 'Неизвестно';
+  const date = new Date(dateStr);
+  return date.toLocaleString('ru-RU', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+};
+
+const deleteProduct = async (id) => {
+  if (confirm('Прекратить надзор за этим товаром?')) {
+    await store.removeProduct(id);
+  }
+};
 </script>
 
 <style scoped>
+.actions-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.update-all-btn {
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.update-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.update-all-btn:hover:not(:disabled) {
+  background: var(--accent-color);
+  color: #000;
+}
+
 .loader {
   text-align: center;
   margin-top: 100px;
@@ -49,6 +126,17 @@ const store = useProductStore();
   0% { opacity: 0.5; }
   50% { opacity: 1; }
   100% { opacity: 0.5; }
+}
+
+.empty-state {
+  text-align: center;
+  margin-top: 60px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
 }
 
 .product-list {
@@ -99,6 +187,17 @@ h3 {
   color: var(--text-muted);
 }
 
+.delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  color: #ef4444;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 .status-indicator {
   font-size: 0.65rem;
   font-weight: 900;
@@ -133,14 +232,5 @@ h3 {
 .last-update {
   font-size: 0.7rem;
   color: var(--text-muted);
-}
-
-.details-btn {
-  background: transparent;
-  border: none;
-  color: var(--accent-color);
-  font-size: 0.8rem;
-  font-weight: bold;
-  cursor: pointer;
 }
 </style>

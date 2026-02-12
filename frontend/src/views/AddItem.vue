@@ -49,10 +49,17 @@ const store = useProductStore();
 const router = useRouter();
 
 const handleSubmit = async () => {
+  if (!url.value || !targetPrice.value) return;
+  
   submitting.value = true;
-  await store.addProduct(url.value, targetPrice.value);
+  const success = await store.addProduct(url.value, targetPrice.value);
   submitting.value = false;
-  router.push('/');
+  
+  if (success) {
+    router.push('/');
+  } else {
+    alert(store.error || 'Произошла ошибка при добавлении товара');
+  }
 };
 </script>
 
