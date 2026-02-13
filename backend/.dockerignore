@@ -1,0 +1,21 @@
+# Исключаем файлы и папки, которые не нужны в образе
+.git
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache
+.coverage
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+.env
+.env.*
+!.env.example
+logs/
+data/
+tests/
+.coverage
+.pytest_cache/

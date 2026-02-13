@@ -1,0 +1,17 @@
+# Исключаем файлы и папки, которые не нужны в образе
+.git
+node_modules
+dist
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
+README.md
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+.vuepress/dist
+.nuxt
+.next
