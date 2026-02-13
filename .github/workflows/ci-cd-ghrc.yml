@@ -1,4 +1,4 @@
-name: CI/CD Pipeline with Self-hosted Runner
+name: CI/CD Pipeline
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
   IMAGE_NAME_FRONTEND: svodni-vestnik-frontend
 
 jobs:
-  # Джоба тестов остается на GitHub-хостинге (экономим ресурсы своего сервера)
+  # Тестирование на облачных серверах GitHub (бесплатно и чисто)
   test:
     runs-on: ubuntu-latest
     steps:
@@ -30,7 +30,7 @@ jobs:
           cd backend
           pytest
 
-  # Сборка тоже остается на GitHub (чтобы не нагружать VPS тяжелыми билдами)
+  # Сборка образов (тоже на облаке GitHub)
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
@@ -40,6 +40,7 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+      
       - name: Lowercase Registry User
         id: owner
         run: echo "user=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
@@ -72,10 +73,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # КЛЮЧЕВАЯ ДЖОБА: Деплой на вашем сервере
+  # Деплой на вашем VPS (Self-hosted)
   deploy:
     needs: build-and-push
-    runs-on: self-hosted  # <--- Теперь используем ваш раннер
+    runs-on: self-hosted
     if: github.ref == 'refs/heads/main'
     
     steps:
@@ -84,33 +85,32 @@ jobs:
 
       - name: Deploy to Docker Compose
         run: |
-          # 1. Логинимся в реестр пакетов прямо на сервере
+          # 1. Авторизация в реестре
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # 2. Подготовка переменных
+          # 2. Создание файла .env из секретов GitHub (решает вашу ошибку)
+          echo "${{ secrets.BACKEND_ENV }}" > ./backend/.env
+          
+          # 3. Подготовка переменных окружения для имен образов
           export REPO_OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           
-          # 3. Создаем нужные папки, если их нет
+          # 4. Создание папок для логов и данных (если их нет)
           mkdir -p ./backend/data ./backend/logs
           
-          # 4. Подменяем конфиг (если используется специальный для GHRC)
+          # 5. Подготовка docker-compose.yml
+          # Убираем предупреждение об устаревшей версии и подставляем владельца репозитория
           if [ -f docker-compose.prod.ghrc.yml ]; then
             cp docker-compose.prod.ghrc.yml docker-compose.yml
           fi
           
-          # 5. Вставляем имя владельца в docker-compose
+          # Удаляем строку 'version', если она есть, чтобы убрать Warning
+          sed -i '/^version:/d' docker-compose.yml
+          # Подставляем имя владельца (в нижнем регистре)
           sed -i "s/\${GITHUB_REPOSITORY_OWNER}/$REPO_OWNER_LC/g" docker-compose.yml
           
-          # 6. Обновляем и перезапускаем
+          # 6. Обновление и запуск
           docker compose pull
           docker compose up -d --remove-orphans
           
-          # 7. Инициализация сертификатов (если нужно)
-          if [ -f ./nginx/init-letsencrypt.sh ]; then
-            chmod +x ./nginx/init-letsencrypt.sh
-            # Раскомментируйте ниже, если нужно запускать каждый раз
-            # ./nginx/init-letsencrypt.sh
-          fi
-          
-          # 8. Очистка старых образов (чтобы не забивать место на VPS)
+          # 7. Очистка старых слоев и образов
           docker image prune -f
