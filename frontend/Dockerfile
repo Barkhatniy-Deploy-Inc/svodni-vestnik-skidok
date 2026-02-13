@@ -1,45 +1,25 @@
-# Multi-stage build для frontend
 # Stage 1: Сборка
 FROM node:18-alpine as build
-
 WORKDIR /app
-
-# Копируем package файлы
 COPY package*.json ./
-
-# Устанавливаем зависимости
 RUN npm ci
-
-# Копируем исходный код
 COPY . .
-
-# Собираем приложение
 RUN npm run build
 
 # Stage 2: Сервер
 FROM nginx:alpine
 
-# Создаем пользователя для запуска nginx
-RUN addgroup -g 1001 -S nginx && \
-    adduser -S -D -H -u 1001 -G nginx nginx
+RUN mkdir -p /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
+    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx
 
-# Копируем собранные файлы из stage 1
-COPY --from=build /app/dist /usr/share/nginx/html
+# 2. Копируем файлы из stage 1 с флагом --chown, это быстрее и чище
+COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
-# Меняем владельца файлов на пользователя nginx
-RUN chown -R nginx:nginx /usr/share/nginx/html
+# 3. Копируем конфигурацию nginx
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 
-# Копируем конфигурацию nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Меняем владельца конфигурационных файлов на пользователя nginx
-RUN chown -R nginx:nginx /etc/nginx
-
-# Переключаемся на пользователя nginx
+# 4. Переключаемся на существующего пользователя nginx
 USER nginx
 
-# Открываем порт 80
 EXPOSE 80
-
-# Запускаем nginx
 CMD ["nginx", "-g", "daemon off;"]
