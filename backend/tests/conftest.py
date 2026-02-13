@@ -1,7 +1,13 @@
+import sys
+import os
 import asyncio
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+
+# Add the backend directory to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from app.database import Base, get_db
 from main import app
 from httpx import AsyncClient, ASGITransport
