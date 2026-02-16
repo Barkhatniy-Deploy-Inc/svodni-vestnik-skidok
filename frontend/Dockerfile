@@ -9,8 +9,8 @@ RUN npm run build
 # Stage 2: Сервер
 FROM nginx:alpine
 
-RUN mkdir -p /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
-    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx
+RUN mkdir -p /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /run/nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx /run/nginx
 
 # 2. Копируем файлы из stage 1 с флагом --chown, это быстрее и чище
 COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
