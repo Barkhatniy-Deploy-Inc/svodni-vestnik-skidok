@@ -14,7 +14,7 @@ env:
 jobs:
   # Тестирование на облачных серверах GitHub (бесплатно и чисто)
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -33,7 +33,7 @@ jobs:
   # Сборка образов (тоже на облаке GitHub)
   build-and-push:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
