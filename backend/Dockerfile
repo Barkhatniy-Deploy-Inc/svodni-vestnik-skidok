@@ -40,7 +40,9 @@ RUN chown -R app:app /app
 USER app
 
 # Создаем папку для базы данных и логов
-RUN mkdir -p /app/data /app/logs
+RUN mkdir -p /app/data /app/logs && \
+    touch /app/logs/app.log && \
+    chown -R app:app /app/data /app/logs
 
 # Открываем порт
 EXPOSE 8000

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/svodni-vestnik-backend:latest
+    image: ghcr.io/barkhatniy-deploy-inc/svodni-vestnik-backend:latest
     container_name: svodni-vestnik-backend
     volumes:
       - ./backend/data:/app/data
@@ -22,7 +22,7 @@ services:
       start_period: 40s
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/svodni-vestnik-frontend:latest
+    image: ghcr.io/barkhatniy-deploy-inc/svodni-vestnik-frontend:latest
     container_name: svodni-vestnik-frontend
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/nginx.conf
