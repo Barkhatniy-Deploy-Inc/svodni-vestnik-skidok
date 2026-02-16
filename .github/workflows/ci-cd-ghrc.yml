@@ -80,6 +80,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
+      - name: Fix permissions
+        run: |
+          sudo chown -R $(whoami) /home/deploy/actions-runner/_work/svodni-vestnik-skidok
+          sudo chmod -R 755 /home/deploy/actions-runner/_work/svodni-vestnik-skidok
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
