@@ -30,7 +30,7 @@ jobs:
           cd backend
           pytest
 
-  # Сборка образов (тоже на облаке GitHub)
+  # Сборка образов (на self-hosted раннере)
   build-and-push:
     needs: test
     runs-on: self-hosted
@@ -39,6 +39,12 @@ jobs:
       contents: read
       packages: write
     steps:
+      # ИСПРАВЛЕНИЕ: Сбрасываем права до того, как checkout попытается очистить папку
+      - name: Pre-checkout fix permissions
+        run: |
+          sudo chown -R $(whoami) ${{ github.workspace }} || true
+          sudo chmod -R 755 ${{ github.workspace }} || true
+
       - uses: actions/checkout@v4
       
       - name: Lowercase Registry User
@@ -80,10 +86,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
-      - name: Fix permissions
+      # ИСПРАВЛЕНИЕ: Сбрасываем права здесь тоже
+      - name: Pre-checkout fix permissions
         run: |
-          sudo chown -R $(whoami) /home/deploy/actions-runner/_work/svodni-vestnik-skidok
-          sudo chmod -R 755 /home/deploy/actions-runner/_work/svodni-vestnik-skidok
+          sudo chown -R $(whoami) ${{ github.workspace }} || true
+          sudo chmod -R 755 ${{ github.workspace }} || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -93,24 +100,23 @@ jobs:
           # 1. Авторизация в реестре
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # 2. Создание файла .env из секретов GitHub (решает вашу ошибку)
+          # 2. Создание файла .env из секретов GitHub
           echo "${{ secrets.BACKEND_ENV }}" > ./backend/.env
           
           # 3. Подготовка переменных окружения для имен образов
           export REPO_OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           
-          # 4. Создание папок для логов и данных (если их нет)
+          # 4. Создание папок для логов и данных
           mkdir -p ./backend/data ./backend/logs
           
           # 5. Подготовка docker-compose.yml
-          # Убираем предупреждение об устаревшей версии и подставляем владельца репозитория
           if [ -f docker-compose.prod.ghrc.yml ]; then
             cp docker-compose.prod.ghrc.yml docker-compose.yml
           fi
           
-          # Удаляем строку 'version', если она есть, чтобы убрать Warning
+          # Удаляем строку 'version', чтобы убрать Warning
           sed -i '/^version:/d' docker-compose.yml
-          # Подставляем имя владельца (в нижнем регистре)
+          # Подставляем имя владельца
           sed -i "s/\${GITHUB_REPOSITORY_OWNER}/$REPO_OWNER_LC/g" docker-compose.yml
           
           # 6. Обновление и запуск
