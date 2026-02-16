@@ -5,7 +5,7 @@ services:
     image: ghcr.io/barkhatniy-deploy-inc/svodni-vestnik-backend:latest
     container_name: svodni-vestnik-backend
     volumes:
-      - ./backend/data:/app/data
+      - backend_data:/app/data
       - backend_logs:/app/logs
     environment:
       - DATABASE_URL=sqlite+aiosqlite:///./data/price_sentinel.db
@@ -78,6 +78,7 @@ volumes:
   certbot_data:
   certbot_www:
   backend_logs:
+  backend_data:
 
 networks:
   app-network:

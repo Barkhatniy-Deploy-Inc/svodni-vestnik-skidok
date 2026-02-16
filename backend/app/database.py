@@ -2,10 +2,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-DATABASE_URL = "sqlite+aiosqlite:///../../data/prices.db"
+DATABASE_URL = "sqlite+aiosqlite:///./data/prices.db"
 
 # Ensure data directory exists
-os.makedirs("../../data", exist_ok=True)
+os.makedirs("./data", exist_ok=True)
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(
