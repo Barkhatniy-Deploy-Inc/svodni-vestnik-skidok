@@ -14,7 +14,7 @@ env:
 jobs:
   # Тестирование на облачных серверах GitHub (бесплатно и чисто)
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
