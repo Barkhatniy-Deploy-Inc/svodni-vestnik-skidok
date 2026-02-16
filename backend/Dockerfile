@@ -36,13 +36,13 @@ COPY . .
 # Меняем владельца файлов на пользователя app
 RUN chown -R app:app /app
 
-# Переключаемся на пользователя app
-USER app
-
 # Создаем папку для базы данных и логов
 RUN mkdir -p /app/data /app/logs && \
     touch /app/logs/app.log && \
     chown -R app:app /app/data /app/logs
+
+# Переключаемся на пользователя app
+USER app
 
 # Открываем порт
 EXPOSE 8000
