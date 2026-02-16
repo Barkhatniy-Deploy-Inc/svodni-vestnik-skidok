@@ -4,13 +4,13 @@
     
     <div v-if="store.items.length > 0" class="actions-bar">
       <button @click="updatePrices" :disabled="updating" class="update-all-btn">
-        {{ updating ? 'ОБНОВЛЯЕМ...' : '🔄 ОБНОВИТЬ ЦЕНЫ' }}
+        {{ updating ? t('update_running') : '🔄 ' + t('update_btn') }}
       </button>
     </div>
 
     <div v-if="store.items.length === 0 && !store.loading" class="empty-state">
       <div class="icon">🔍</div>
-      <p>Список пуст. Добавьте первый товар для надзора.</p>
+      <p>{{ t('dashboard_empty') }}</p>
     </div>
 
     <div v-else class="product-list">
@@ -20,7 +20,7 @@
             <h3>{{ item.name }}</h3>
             <div class="price-group">
               <span class="current">{{ item.current_price || '...' }} ₽</span>
-              <span class="target">Цель: {{ item.target_price }} ₽</span>
+              <span class="target">{{ t('add_price_label') }}: {{ item.target_price }} ₽</span>
             </div>
           </div>
           <button @click="deleteProduct(item.id)" class="delete-btn">×</button>
@@ -31,9 +31,9 @@
         </div>
         
         <div class="card-footer">
-          <span class="last-update">Обновлено: {{ formatDate(item.updated_at) }}</span>
+          <span class="last-update">{{ t('last_update') }}: {{ formatDate(item.updated_at) }}</span>
           <div class="status-indicator" :class="{ 'ready': item.current_price <= item.target_price && item.current_price > 0 }">
-            {{ (item.current_price <= item.target_price && item.current_price > 0) ? 'ВЫГОДНО' : 'ОЖИДАНИЕ' }}
+            {{ (item.current_price <= item.target_price && item.current_price > 0) ? t('status_ready') : t('status_waiting') }}
           </div>
         </div>
       </div>
@@ -44,17 +44,19 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useProductStore } from '../store/products';
+import { useTranslation } from '../api/messages';
 import client from '../api/client';
 import PriceChart from '../components/PriceChart.vue';
 
 const store = useProductStore();
+const { t } = useTranslation();
 const updating = ref(false);
 
 const updatePrices = async () => {
   updating.value = true;
   try {
     await client.post('/api/v1/products/update-all');
-    alert('Задача на обновление запущена. Цены обновятся в течение нескольких минут.');
+    alert(t('update_success'));
   } catch (err) {
     const msg = err.response?.data?.detail || 'Ошибка при обновлении';
     alert(msg);
@@ -79,7 +81,7 @@ const formatDate = (dateStr) => {
 };
 
 const deleteProduct = async (id) => {
-  if (confirm('Прекратить надзор за этим товаром?')) {
+  if (confirm(t('delete_confirm'))) {
     await store.removeProduct(id);
   }
 };

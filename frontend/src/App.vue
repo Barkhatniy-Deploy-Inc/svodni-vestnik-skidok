@@ -6,8 +6,8 @@
     <header class="header">
       <div class="header-content">
         <div class="logo-area">
-          <h1>Вестник</h1>
-          <p class="subtitle">мониторинг 24/7</p>
+          <h1>{{ t('app_title') }}</h1>
+          <p class="subtitle">{{ t('app_subtitle') }}</p>
         </div>
         <button class="settings-btn" @click="settingsStore.toggleSettings">
           ⚙️
@@ -27,11 +27,11 @@
     <nav class="nav-bar">
       <router-link to="/" class="nav-item">
         <span class="icon">📊</span>
-        Летопись
+        {{ t('nav_history') }}
       </router-link>
       <router-link to="/add" class="nav-item">
         <span class="icon">➕</span>
-        Поручение
+        {{ t('nav_add') }}
       </router-link>
     </nav>
 
@@ -43,9 +43,11 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useSettingsStore } from './store/settings';
+import { useTranslation } from './api/messages';
 import SettingsModal from './components/SettingsModal.vue';
 
 const settingsStore = useSettingsStore();
+const { t } = useTranslation();
 
 onMounted(() => {
   // Применяем сохраненную тему при запуске

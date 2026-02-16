@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Реализация системы переключения тем и тональностей общения**
+- [x] **Track: Реализация системы переключения тем и тональностей общения**
   *Link: [./tracks/theme_tonality_20260213/](./tracks/theme_tonality_20260213/)*

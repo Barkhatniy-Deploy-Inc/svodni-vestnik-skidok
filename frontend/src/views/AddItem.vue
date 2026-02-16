@@ -1,12 +1,12 @@
 <template>
   <div class="add-item">
     <div class="form-card">
-      <h2>Новое поручение</h2>
-      <p class="description">Вверьте ссылку Вестнику, и он начнет бдение.</p>
+      <h2>{{ t('add_title') }}</h2>
+      <p class="description">{{ t('add_desc') }}</p>
       
       <form @submit.prevent="handleSubmit" class="form">
         <div class="input-group">
-          <label>Ссылка на товар</label>
+          <label>{{ t('add_url_label') }}</label>
           <input 
             v-model="url" 
             type="url" 
@@ -16,7 +16,7 @@
         </div>
         
         <div class="input-group">
-          <label>Желаемая цена</label>
+          <label>{{ t('add_price_label') }}</label>
           <div class="price-input">
             <input 
               v-model.number="targetPrice" 
@@ -29,7 +29,7 @@
         </div>
 
         <button type="submit" :disabled="submitting" class="submit-btn">
-          {{ submitting ? 'ЗАПИСЫВАЕМ...' : 'В РАБОТУ' }}
+          {{ submitting ? t('add_submitting') : t('add_submit') }}
           <div v-if="!submitting" class="btn-glow"></div>
         </button>
       </form>
@@ -41,11 +41,13 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProductStore } from '../store/products';
+import { useTranslation } from '../api/messages';
 
 const url = ref('');
 const targetPrice = ref('');
 const submitting = ref(false);
 const store = useProductStore();
+const { t } = useTranslation();
 const router = useRouter();
 
 const handleSubmit = async () => {
