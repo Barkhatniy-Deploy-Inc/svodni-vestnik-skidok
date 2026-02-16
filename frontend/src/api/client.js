@@ -4,7 +4,7 @@ import axios from 'axios';
 const initData = window.Telegram?.WebApp?.initData || '';
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
     'X-TG-Init-Data': initData // Передаем паспорт пользователя Telegram
