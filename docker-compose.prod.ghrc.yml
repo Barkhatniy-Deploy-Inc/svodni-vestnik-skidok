@@ -76,7 +76,7 @@ services:
   #     - nginx
   #   command: certonly --webroot --webroot-path=/var/www/certbot --email admin@158.255.1.190.sslip.io --agree-tos --no-eff-email -d 158.255.1.190.sslip.io
 
-volumes:
+# volumes:
   # Закомментированы volumes для certbot
   # certbot_data:
   # certbot_www:
