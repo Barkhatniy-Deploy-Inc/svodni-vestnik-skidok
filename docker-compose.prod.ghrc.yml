@@ -6,7 +6,7 @@ services:
     container_name: svodni-vestnik-backend
     volumes:
       - ./backend/data:/app/data
-      - ./backend/logs:/app/logs
+      - backend_logs:/app/logs
     environment:
       - DATABASE_URL=sqlite+aiosqlite:///./data/price_sentinel.db
     env_file:
@@ -72,11 +72,12 @@ services:
     restart: unless-stopped
     depends_on:
       - nginx
-    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@158.255.1.190.sslip.io --agree-tos --no-eff-email -d 158.255.1.190.sslip.io
+    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@158.255.1.190.sslip.io --agree-tos --no-eff-email -d 158.255.1.190.sslip.io --non-interactive
 
 volumes:
   certbot_data:
   certbot_www:
+  backend_logs:
 
 networks:
   app-network:
