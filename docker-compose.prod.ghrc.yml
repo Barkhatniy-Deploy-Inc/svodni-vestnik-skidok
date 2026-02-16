@@ -46,9 +46,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      # Закомментированы volumes для certbot
-      # - certbot_data:/etc/letsencrypt
-      # - certbot_www:/var/www/certbot
+      - certbot_data:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
     networks:
       - app-network
     restart: unless-stopped
@@ -62,24 +61,22 @@ services:
       retries: 3
       start_period: 40s
 
-  # Закомментирован сервис certbot
-  # certbot:
-  #   image: certbot/certbot
-  #   container_name: svodni-vestnik-certbot
-  #   volumes:
-  #     - certbot_data:/etc/letsencrypt
-  #     - certbot_www:/var/www/certbot
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - nginx
-  #   command: certonly --webroot --webroot-path=/var/www/certbot --email admin@158.255.1.190.sslip.io --agree-tos --no-eff-email -d 158.255.1.190.sslip.io
+  certbot:
+    image: certbot/certbot
+    container_name: svodni-vestnik-certbot
+    volumes:
+      - certbot_data:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@158.255.1.190.sslip.io --agree-tos --no-eff-email -d 158.255.1.190.sslip.io
 
-# volumes:
-  # Закомментированы volumes для certbot
-  # certbot_data:
-  # certbot_www:
+volumes:
+  certbot_data:
+  certbot_www:
 
 networks:
   app-network:
