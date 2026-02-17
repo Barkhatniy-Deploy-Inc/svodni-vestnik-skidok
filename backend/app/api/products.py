@@ -5,6 +5,8 @@ from typing import List
 from ..database import get_db
 from .. import models, schemas, scraper
 from ..core.auth import get_current_user_id
+from datetime import datetime, timedelta
+import asyncio
 
 router = APIRouter(
     prefix="/products",
@@ -14,6 +16,9 @@ router = APIRouter(
 
 # Инициализация парсера
 product_scraper = scraper.Scraper()
+
+# Глобальная переменная для хранения времени последнего ручного обновления
+last_manual_update = None
 
 @router.post("/", response_model=schemas.ProductRead, summary="Добавить новый товар")
 async def create_product(
@@ -67,11 +72,6 @@ async def read_products(
     )
     return result.scalars().all()
 
-from datetime import datetime, timedelta
-
-# Глобальная переменная для хранения времени последнего ручного обновления
-last_manual_update = None
-
 @router.post("/update-all", summary="Запустить обновление цен вручную")
 async def update_all_prices():
     """
@@ -91,30 +91,45 @@ async def update_all_prices():
     
     from ..services.monitor import check_all_prices
     # Запускаем проверку как фоновую задачу, чтобы не заставлять пользователя ждать
-    import asyncio
     asyncio.create_task(check_all_prices())
     
     last_manual_update = now
     return {"status": "success", "message": "Обновление цен запущено в фоновом режиме"}
 
 @router.get("/{product_id}", response_model=schemas.ProductDetail, summary="Получить детали товара")
-async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
+async def read_product(
+    product_id: int, 
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
     """ Возвращает подробную информацию о товаре, включая историю изменения цен. """
     result = await db.execute(
-        select(models.Product).where(models.Product.id == product_id)
+        select(models.Product).where(
+            models.Product.id == product_id,
+            models.Product.user_id == user_id # Проверка владельца
+        )
     )
     product = result.scalars().first()
     if product is None:
-        raise HTTPException(status_code=404, detail="Товар не найден")
+        raise HTTPException(status_code=404, detail="Товар не найден или доступ запрещен")
     return product
 
 @router.delete("/{product_id}", summary="Удалить товар")
-async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_product(
+    product_id: int, 
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
     """ Прекращает наблюдение за товаром и удаляет его из базы. """
-    result = await db.execute(select(models.Product).where(models.Product.id == product_id))
+    result = await db.execute(
+        select(models.Product).where(
+            models.Product.id == product_id,
+            models.Product.user_id == user_id # Проверка владельца
+        )
+    )
     product = result.scalars().first()
     if product is None:
-        raise HTTPException(status_code=404, detail="Товар не найден")
+        raise HTTPException(status_code=404, detail="Товар не найден или доступ запрещен")
     
     await db.delete(product)
     await db.commit()

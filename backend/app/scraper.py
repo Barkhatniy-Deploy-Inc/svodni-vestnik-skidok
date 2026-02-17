@@ -4,6 +4,7 @@ import logging
 import re
 import json
 from urllib.parse import urlparse
+from typing import Optional, Dict
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class Scraper:
             "Pragma": "no-cache"
         }
 
-    async def get_product_data(self, url: str) -> dict:
+    async def get_product_data(self, url: str) -> Dict:
         """
         Определяет домен и вызывает соответствующий метод парсинга.
         """
@@ -44,11 +45,14 @@ class Scraper:
                     return self._parse_yandex(html)
                 else:
                     return self._parse_generic(html)
+        except httpx.RequestError as e:
+            logger.error(f"Ошибка сети при запросе к {url}: {e}")
+            return {"name": "Ошибка сети", "price": None}
         except Exception as e:
-            logger.error(f"Исключение при парсинге {url}: {e}")
+            logger.error(f"Непредвиденное исключение при парсинге {url}: {e}", exc_info=True)
             return {"name": "Ошибка системы", "price": None}
 
-    def _parse_wildberries(self, html: str) -> dict:
+    def _parse_wildberries(self, html: str) -> Dict:
         """Парсинг Wildberries через поиск JSON в скриптах или мета-тегах."""
         soup = BeautifulSoup(html, "html.parser")
         name = soup.find("h1")
@@ -60,7 +64,7 @@ class Scraper:
         
         return {"name": name_text, "price": price}
 
-    def _parse_ozon(self, html: str) -> dict:
+    def _parse_ozon(self, html: str) -> Dict:
         """Парсинг Ozon (сложный случай, ищем JSON-LD)."""
         soup = BeautifulSoup(html, "html.parser")
         
@@ -73,18 +77,23 @@ class Scraper:
         scripts = soup.find_all("script", type="application/ld+json")
         for script in scripts:
             try:
+                if not script.string:
+                    continue
                 data = json.loads(script.string)
                 if isinstance(data, dict) and "offers" in data:
                     price = data["offers"].get("lowPrice") or data["offers"].get("price")
-                    if price: break
-            except: continue
+                    if price: 
+                        break
+            except (json.JSONDecodeError, TypeError, KeyError) as e:
+                logger.debug(f"Ошибка при разборе JSON-LD на Ozon: {e}")
+                continue
             
         if not price:
             price = self._extract_price_regex(html)
             
         return {"name": name, "price": float(price) if price else None}
 
-    def _parse_yandex(self, html: str) -> dict:
+    def _parse_yandex(self, html: str) -> Dict:
         """Парсинг Яндекс Маркета."""
         soup = BeautifulSoup(html, "html.parser")
         name = soup.find("h1")
@@ -96,7 +105,7 @@ class Scraper:
         
         return {"name": name_text, "price": float(price) if price else None}
 
-    def _parse_generic(self, html: str) -> dict:
+    def _parse_generic(self, html: str) -> Dict:
         """Универсальный парсер для остальных сайтов."""
         soup = BeautifulSoup(html, "html.parser")
         name = soup.find("h1") or soup.find("title")
@@ -105,7 +114,7 @@ class Scraper:
         price = self._extract_price_regex(html)
         return {"name": name_text, "price": price}
 
-    def _extract_price_regex(self, html: str) -> float | None:
+    def _extract_price_regex(self, html: str) -> Optional[float]:
         """Улучшенный поиск цены регулярными выражениями."""
         # Очищаем HTML от скриптов, чтобы не найти лишние цифры
         clean_text = re.sub(r'<script.*?>.*?</script>', '', html, flags=re.DOTALL)

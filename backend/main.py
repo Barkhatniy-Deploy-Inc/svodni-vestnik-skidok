@@ -1,6 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -33,14 +34,32 @@ from app.services.monitor import check_all_prices
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
 
+# --- Lifespan вместо устаревших on_event ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Действия при запуске
+    logger.info("Запуск приложения (lifespan)...")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    # Инициализация планировщика
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(check_all_prices, "interval", hours=4)
+    scheduler.start()
+    logger.info("Планировщик запущен: проверка цен каждые 4 часа.")
+    
+    yield
+    
+    # Действия при выключении
+    scheduler.shutdown()
+    logger.info("Приложение и планировщик остановлены.")
+
 app = FastAPI(
     title="Price Sentinel API",
     description="API для системы мониторинга цен (Сводный Вестник Скидок)",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
-
-# Инициализация планировщика
-scheduler = AsyncIOScheduler()
 
 # Настройка CORS
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
@@ -55,22 +74,6 @@ app.add_middleware(
 
 # Подключение роутеров
 app.include_router(products.router, prefix="/api/v1")
-
-@app.on_event("startup")
-async def startup():
-    logger.info("Запуск приложения...")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    # Проверка цен каждые 4 часа
-    scheduler.add_job(check_all_prices, "interval", hours=4)
-    scheduler.start()
-    logger.info("Планировщик запущен: проверка цен каждые 4 часа.")
-
-@app.on_event("shutdown")
-async def shutdown():
-    scheduler.shutdown()
-    logger.info("Приложение остановлено.")
 
 @app.get("/", tags=["Общее"])
 async def root():
