@@ -72,7 +72,7 @@ services:
     restart: unless-stopped
     depends_on:
       - nginx
-    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@158.255.1.190.sslip.io --agree-tos --no-eff-email -d 158.255.1.190.sslip.io --non-interactive
+    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@89.232.177.172.sslip.io --agree-tos --no-eff-email -d 89.232.177.172.sslip.io --non-interactive
 
 volumes:
   certbot_data:
