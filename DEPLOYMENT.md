@@ -5,7 +5,7 @@
 - Docker
 - Docker Compose
 - Доступ к VPS по SSH
-- Доменное имя (в данном случае используется sslip.io: 158.255.1.190.sslip.io)
+- Доменное имя (в данном случае используется sslip.io)
 
 ## Настройка Secrets для GitHub Actions
 
