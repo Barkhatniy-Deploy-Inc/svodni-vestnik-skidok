@@ -55,7 +55,7 @@ const updating = ref(false);
 const updatePrices = async () => {
   updating.value = true;
   try {
-    await client.post('/api/v1/products/update-all');
+    await client.post('/products/update-all');
     alert(t('update_success'));
   } catch (err) {
     const msg = err.response?.data?.detail || 'Ошибка при обновлении';

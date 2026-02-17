@@ -13,7 +13,7 @@ export const useProductStore = defineStore('products', {
       this.loading = true;
       this.error = null;
       try {
-        const response = await client.get('/api/v1/products/');
+        const response = await client.get('/products/');
         this.items = response.data;
       } catch (err) {
         console.error('Ошибка при загрузке товаров:', err);
@@ -27,7 +27,7 @@ export const useProductStore = defineStore('products', {
     async addProduct(url, targetPrice) {
       this.loading = true;
       try {
-        const response = await client.post('/api/v1/products/', {
+        const response = await client.post('/products/', {
           url: url,
           target_price: targetPrice
         });
@@ -45,7 +45,7 @@ export const useProductStore = defineStore('products', {
     // Удаление товара
     async removeProduct(id) {
       try {
-        await client.delete(`/api/v1/products/${id}`);
+        await client.delete(`/products/${id}`);
         this.items = this.items.filter(item => item.id !== id);
       } catch (err) {
         console.error('Ошибка при удалении товара:', err);

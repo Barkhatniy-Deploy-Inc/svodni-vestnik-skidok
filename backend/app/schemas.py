@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -19,16 +19,14 @@ class ProductRead(ProductBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Схема для истории цен
 class PriceHistoryRead(BaseModel):
     price: float
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Полная информация о товаре с историей цен
 class ProductDetail(ProductRead):
@@ -43,5 +41,4 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

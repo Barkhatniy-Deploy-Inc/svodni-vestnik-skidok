@@ -11,4 +11,21 @@ const client = axios.create({
   }
 });
 
+// Глобальная обработка ошибок
+client.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 401) {
+        console.error('Ошибка авторизации Telegram');
+      } else if (status === 429) {
+        // Ошибка Rate Limit (наш ручной кулдаун)
+        return Promise.reject(error);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default client;
