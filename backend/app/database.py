@@ -2,10 +2,15 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-DATABASE_URL = "sqlite+aiosqlite:///./data/prices.db"
+# Приоритет: переменная окружения, иначе дефолтный локальный путь
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/prices.db")
 
-# Ensure data directory exists
-os.makedirs("./data", exist_ok=True)
+# Если используется путь по умолчанию, создаем папку
+if DATABASE_URL.startswith("sqlite"):
+    db_path = DATABASE_URL.split("///")[-1]
+    db_dir = os.path.dirname(db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(

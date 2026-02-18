@@ -20,6 +20,9 @@ product_scraper = scraper.Scraper()
 # Глобальная переменная для хранения времени последнего ручного обновления
 last_manual_update = None
 
+import logging
+logger = logging.getLogger("price_sentinel.api")
+
 @router.post("/", response_model=schemas.ProductRead, summary="Добавить новый товар")
 async def create_product(
     product: schemas.ProductCreate, 
@@ -30,8 +33,19 @@ async def create_product(
     Добавляет товар в список наблюдения.
     Сразу вызывает парсер для получения названия и текущей цены.
     """
+    logger.info(f"Пользователь {user_id} пытается добавить товар: {product.url}")
+    
     # Получаем актуальные данные с сайта
-    scraped_data = await product_scraper.get_product_data(str(product.url))
+    try:
+        scraped_data = await product_scraper.get_product_data(str(product.url))
+        logger.info(f"Результат парсинга: {scraped_data}")
+    except Exception as e:
+        logger.error(f"Критическая ошибка парсера при добавлении: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Ошибка парсера: {str(e)}")
+    
+    if scraped_data.get("price") is None:
+        logger.warning(f"Парсер не смог найти цену по ссылке: {product.url}")
+        # Мы всё равно сохраняем товар, но уведомляем пользователя
     
     new_product = models.Product(
         url=str(product.url),
